@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -101,7 +102,7 @@ func main() {
 
 	fmt.Println("Parsing transaction...")
 
-	transaction, err := ParseTransaction(base64.StdEncoding.EncodeToString(encoded), slot)
+	transaction, err := ParseTransactionWithSignature(base64.StdEncoding.EncodeToString(encoded), slot, signature)
 	if err != nil {
 		fmt.Printf("Failed to parse transaction: %v\n", err)
 		demonstrateBasicFunctionality()
@@ -207,6 +208,78 @@ func printTransaction(tx *Transaction) {
 	fmt.Println(string(jsonData))
 }
 
+// fetchAndParseTransaction fetches a transaction by signature and parses it
+func fetchAndParseTransaction(signature solana.Signature) bool {
+	// Try multiple RPC endpoints in case one fails
+	rpcEndpoints := []string{
+		rpc.MainNetBeta_RPC,
+		"https://solana-api.projectserum.com",
+		"https://api.mainnet-beta.solana.com",
+		"https://solana-mainnet.g.alchemy.com/v2/demo",
+	}
+
+	var txResp *rpc.GetTransactionResult
+	var err error
+
+	// Try each RPC endpoint
+	for i, endpoint := range rpcEndpoints {
+		fmt.Printf("Trying RPC endpoint %d/%d: %s\n", i+1, len(rpcEndpoints), endpoint)
+		client := rpc.New(endpoint)
+
+		// Create a context with timeout for each request
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		txResp, err = client.GetTransaction(
+			ctx,
+			signature,
+			&rpc.GetTransactionOpts{
+				MaxSupportedTransactionVersion: &[]uint64{0}[0], // Support version 0 transactions
+				Encoding:                       "base64",
+			},
+		)
+
+		cancel() // Clean up the context
+
+		if err == nil && txResp != nil && txResp.Transaction != nil {
+			fmt.Printf("✅ Successfully fetched transaction from endpoint %d\n", i+1)
+			break
+		}
+
+		log.Printf("❌ Endpoint %d failed: %v", i+1, err)
+		if i < len(rpcEndpoints)-1 {
+			fmt.Printf("Trying next endpoint...\n")
+		}
+	}
+
+	if err != nil || txResp == nil || txResp.Transaction == nil {
+		log.Printf("❌ All RPC endpoints failed. Last error: %v", err)
+		return false
+	}
+
+	// Get the base64 encoded transaction
+	encoded := txResp.Transaction.GetBinary()
+	slot := txResp.Slot
+
+	fmt.Println("Parsing transaction...")
+
+	transaction, err := ParseTransactionWithSignature(base64.StdEncoding.EncodeToString(encoded), slot, signature)
+	if err != nil {
+		fmt.Printf("Failed to parse transaction: %v\n", err)
+		return false
+	}
+
+	fmt.Printf("Transaction successfully parsed!\n\n")
+
+	issues := ValidateTransaction(transaction)
+	PrintValidationResults(issues)
+	fmt.Println()
+
+	AnalyzeTransaction(transaction)
+	printTransaction(transaction)
+
+	return true
+}
+
 // loadAndParseFromFile loads a transaction from a file and parses it
 func loadAndParseFromFile(filename string) {
 	data, err := os.ReadFile(filename)
@@ -215,12 +288,32 @@ func loadAndParseFromFile(filename string) {
 		return
 	}
 
-	// Assume the file contains a base64 encoded transaction
-	transactionBase64 := string(data)
+	content := string(data)
+	content = strings.TrimSpace(content) // Remove any whitespace/newlines
 
-	// Parse the transaction
-	slot := uint64(987654321) // Sample slot
-	transaction, err := ParseTransaction(transactionBase64, slot)
+	// Check if the content looks like a signature (base58) or transaction data (base64)
+	if len(content) >= 80 && len(content) <= 90 {
+		// Likely a transaction signature - try to fetch it from RPC
+		fmt.Printf("File appears to contain a transaction signature: %s\n", content)
+		fmt.Printf("Attempting to fetch transaction from RPC...\n")
+
+		signature, err := solana.SignatureFromBase58(content)
+		if err != nil {
+			log.Printf("Invalid transaction signature: %v", err)
+			return
+		}
+
+		// Try to fetch the transaction using the same RPC logic as main
+		if !fetchAndParseTransaction(signature) {
+			log.Printf("Failed to fetch transaction with signature: %s", content)
+		}
+		return
+	}
+
+	// Assume the file contains a base64 encoded transaction
+	fmt.Printf("File appears to contain base64 transaction data\n")
+	slot := uint64(353025037) // Sample slot
+	transaction, err := ParseTransaction(content, slot)
 	if err != nil {
 		log.Printf("Failed to parse transaction from file: %v", err)
 		return
