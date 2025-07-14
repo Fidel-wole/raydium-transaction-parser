@@ -1,0 +1,22 @@
+# Real Raydium Launchpad Transaction Examples
+
+# Transaction 1: The demo transaction (Create/Initialize)
+# https://solscan.io/tx/5wefCTqi9ynrh8pvVHFzpgHCLFFzoBwGoTgWSd6iq2Qw4Y51U4cEc2xHYtsdVSFZmRXUp5DNMSkhzb1CaXomLpJM
+# Program: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P (Raydium Launchpad V1)
+# This is a base64 encoded transaction that should be used in tests
+
+# Transaction 2: Launchpad Buy Example
+# https://solscan.io/tx/example_buy_transaction
+# Program: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+
+# Transaction 3: Launchpad Sell Example  
+# https://solscan.io/tx/example_sell_transaction
+# Program: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+
+# Transaction 4: Launchpad Swap Example
+# https://solscan.io/tx/example_swap_transaction
+# Program: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+
+# Transaction 5: Launchpad Migrate Example
+# https://solscan.io/tx/example_migrate_transaction
+# Program: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
