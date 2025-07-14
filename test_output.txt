@@ -1,0 +1,98 @@
+Raydium Transaction Parser
+==========================
+Fetching real transaction from Solana mainnet...
+Trying RPC endpoint 1/4: https://api.mainnet-beta.solana.com
+✅ Successfully fetched transaction from endpoint 1
+Parsing transaction...
+2025/07/14 19:33:28 Decoded transaction bytes: 903 bytes
+2025/07/14 19:33:28 Parsing transaction with 8 instructions
+2025/07/14 19:33:28 Instruction 0: Program ID = ComputeBudget111111111111111111111111111111
+2025/07/14 19:33:28 Skipping non-Raydium instruction at index 0 (Program: ComputeBudget111111111111111111111111111111)
+2025/07/14 19:33:28 Instruction 1: Program ID = ComputeBudget111111111111111111111111111111
+2025/07/14 19:33:28 Skipping non-Raydium instruction at index 1 (Program: ComputeBudget111111111111111111111111111111)
+2025/07/14 19:33:28 Instruction 2: Program ID = 11111111111111111111111111111111
+2025/07/14 19:33:28 Skipping non-Raydium instruction at index 2 (Program: 11111111111111111111111111111111)
+2025/07/14 19:33:28 Instruction 3: Program ID = TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+2025/07/14 19:33:28 Found Token Program instruction at index 3
+2025/07/14 19:33:28 Instruction 4: Program ID = LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj
+2025/07/14 19:33:28 Found Raydium Launchpad instruction at index 4
+2025/07/14 19:33:28 Launchpad instruction discriminator: 149 at index 4
+2025/07/14 19:33:28 Launchpad complex discriminator: 1a987cd39bde2795
+2025/07/14 19:33:28 Unknown complex Launchpad instruction discriminator: 1a987cd39bde2795
+2025/07/14 19:33:28 Attempting to parse generic launchpad instruction (discriminator: 1a987cd39bde2795, accounts: 15, data: 32 bytes)
+2025/07/14 19:33:28 Pattern matches buy/sell - amount: 254840395368
+2025/07/14 19:33:28 Instruction 5: Program ID = TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+2025/07/14 19:33:28 Found Token Program instruction at index 5
+2025/07/14 19:33:28 Instruction 6: Program ID = 11111111111111111111111111111111
+2025/07/14 19:33:28 Skipping non-Raydium instruction at index 6 (Program: 11111111111111111111111111111111)
+2025/07/14 19:33:28 Instruction 7: Program ID = 11111111111111111111111111111111
+2025/07/14 19:33:28 Skipping non-Raydium instruction at index 7 (Program: 11111111111111111111111111111111)
+2025/07/14 19:33:28 Successfully parsed transaction with 0 creates, 1 trades, 0 migrations
+Transaction successfully parsed!
+
+✅ Transaction validation passed
+
+=== Transaction Analysis ===
+💱 Trading Transaction
+📊 Trading Activity: 1 buys, 0 sells
+🪙 Tokens involved: 2 unique tokens
+   - UNKNOWN (Unknown Token)
+   - UNKNOWN (Unknown Token)
+
+Signature: 5wefCTqi9ynrh8pvVHFzpgHCLFFzoBwGoTgWSd6iq2Qw4Y51U4cEc2xHYtsdVSFZmRXUp5DNMSkhzb1CaXomLpJM
+Slot: 352860045
+Number of Creates: 0
+Number of Trades: 1
+Number of Trade Buys: 1
+Number of Trade Sells: 0
+Number of Migrations: 0
+Number of Swap Buys: 1
+Number of Swap Sells: 0
+
+Trade Operations:
+  [0] Type: buy, TokenIn: AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD, TokenOut: WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh, Trader: AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD, Pool: 6s1xP3hpbAfFoNtUNF8mfHsjr2Bd97JxFJRWLbL6aHuX
+
+Swap Buy Operations:
+  [0] TokenIn: AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD, TokenOut: WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh, AmountIn: 7501475791232556583, AmountOut: 0, Buyer: AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD
+
+JSON Representation:
+{
+  "Signature": "5wefCTqi9ynrh8pvVHFzpgHCLFFzoBwGoTgWSd6iq2Qw4Y51U4cEc2xHYtsdVSFZmRXUp5DNMSkhzb1CaXomLpJM",
+  "Slot": 352860045,
+  "Create": [],
+  "Trade": [
+    {
+      "InstructionIndex": 4,
+      "TokenIn": "AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD",
+      "TokenOut": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+      "AmountIn": 7501475791232556583,
+      "AmountOut": 0,
+      "Trader": "AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD",
+      "Pool": "6s1xP3hpbAfFoNtUNF8mfHsjr2Bd97JxFJRWLbL6aHuX",
+      "TradeType": "buy"
+    }
+  ],
+  "TradeBuys": [
+    4
+  ],
+  "TradeSells": [],
+  "Migrate": [],
+  "SwapBuys": [
+    {
+      "TokenIn": "AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD",
+      "TokenOut": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+      "AmountIn": 7501475791232556583,
+      "AmountOut": 0,
+      "MinAmountOut": 0,
+      "Pool": "6s1xP3hpbAfFoNtUNF8mfHsjr2Bd97JxFJRWLbL6aHuX",
+      "Buyer": "AvJ2gsmQzFzfW8kbVzM4S6k6R7Nf4jkRw53VQYEUupRD",
+      "Slippage": 0.04491844712854956
+    }
+  ],
+  "SwapSells": []
+}
+
+Loading transaction from file...
+File appears to contain a transaction signature: MMJnB7TihWAbMstHHxpNGKdNWzvw9NJKwWNsUA29HiwCaWfMzo6de5Q5dFmREpBxAMGbm7VdTuqp35e7JjwdF7o
+Attempting to fetch transaction from RPC...
+Trying RPC endpoint 1/4: https://api.mainnet-beta.solana.com

@@ -17,7 +17,7 @@ var (
 	RaydiumStakingProgramID   = solana.MustPublicKeyFromBase58("EhhTKczWMGQt46ynNeRX1WfeagwwJd7ufHvCDjRxjo5Q")
 	RaydiumLiquidityProgramID = solana.MustPublicKeyFromBase58("27haf8L6oxUeXrHrgEgsexjSY5hbVUWEmvv9Nyxg8vQv")
 	// Raydium Launchpad specific program IDs
-	RaydiumLaunchpadV1ProgramID = solana.MustPublicKeyFromBase58("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P")
+	RaydiumLaunchpadV1ProgramID = solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj")
 	RaydiumCpSwapProgramID      = solana.MustPublicKeyFromBase58("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C")
 	// Additional Raydium program IDs found in real transactions
 	RaydiumUnknownProgramID1 = solana.MustPublicKeyFromBase58("FoaFt2Dtz58RA6DPjbRb9t9z8sLJRChiGFTv21EfaseZ")
@@ -603,7 +603,7 @@ func parseSwapInstruction(instruction solana.CompiledInstruction, message *solan
 	tokenIn := message.AccountKeys[instruction.Accounts[0]]
 	tokenOut := message.AccountKeys[instruction.Accounts[1]]
 	pool := message.AccountKeys[instruction.Accounts[2]]
-	trader := message.AccountKeys[instruction.Accounts[3]]
+	trader := message.AccountKeys[0] // Transaction signer is the trader
 
 	tradeInfo := TradeInfo{
 		InstructionIndex: index,
@@ -666,12 +666,24 @@ func parseBuyInstructionStandard(instruction solana.CompiledInstruction, message
 		maxAmountIn = binary.LittleEndian.Uint64(instruction.Data[9:17])
 	}
 
+	// For launchpad buy transactions, TokenIn is typically SOL
+	solMint := solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")
+
+	// Add bounds checking for account access
+	var tokenOut, pool solana.PublicKey
+	if len(instruction.Accounts) > 1 && int(instruction.Accounts[1]) < len(message.AccountKeys) {
+		tokenOut = message.AccountKeys[instruction.Accounts[1]] // Token being bought
+	}
+	if len(instruction.Accounts) > 2 && int(instruction.Accounts[2]) < len(message.AccountKeys) {
+		pool = message.AccountKeys[instruction.Accounts[2]]
+	}
+
 	tradeInfo := TradeInfo{
 		InstructionIndex: index,
-		TokenIn:          message.AccountKeys[instruction.Accounts[0]], // Base currency (SOL/USDC)
-		TokenOut:         message.AccountKeys[instruction.Accounts[1]], // Token being bought
-		Pool:             message.AccountKeys[instruction.Accounts[2]],
-		Trader:           message.AccountKeys[instruction.Accounts[3]],
+		TokenIn:          solMint,  // Base currency (SOL for launchpad)
+		TokenOut:         tokenOut, // Token being bought
+		Pool:             pool,
+		Trader:           message.AccountKeys[0], // Transaction signer is the trader
 		AmountIn:         amountIn,
 		AmountOut:        0, // Would be extracted from transaction logs
 		TradeType:        "buy",
@@ -714,12 +726,24 @@ func parseSellInstructionStandard(instruction solana.CompiledInstruction, messag
 		minAmountOut = binary.LittleEndian.Uint64(instruction.Data[9:17])
 	}
 
+	// For launchpad sell transactions, TokenOut is typically SOL
+	solMint := solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")
+
+	// Add bounds checking for account access
+	var tokenIn, pool solana.PublicKey
+	if len(instruction.Accounts) > 0 && int(instruction.Accounts[0]) < len(message.AccountKeys) {
+		tokenIn = message.AccountKeys[instruction.Accounts[0]] // Token being sold
+	}
+	if len(instruction.Accounts) > 2 && int(instruction.Accounts[2]) < len(message.AccountKeys) {
+		pool = message.AccountKeys[instruction.Accounts[2]]
+	}
+
 	tradeInfo := TradeInfo{
 		InstructionIndex: index,
-		TokenIn:          message.AccountKeys[instruction.Accounts[0]], // Token being sold
-		TokenOut:         message.AccountKeys[instruction.Accounts[1]], // Base currency (SOL/USDC)
-		Pool:             message.AccountKeys[instruction.Accounts[2]],
-		Trader:           message.AccountKeys[instruction.Accounts[3]],
+		TokenIn:          tokenIn, // Token being sold
+		TokenOut:         solMint, // Base currency (SOL for launchpad)
+		Pool:             pool,
+		Trader:           message.AccountKeys[0], // Transaction signer is the trader
 		AmountIn:         amountIn,
 		AmountOut:        0, // Would be extracted from transaction logs
 		TradeType:        "sell",
@@ -1044,7 +1068,7 @@ func parseGeyserSwapInstruction(instruction GeyserInstruction, index int, result
 		TokenIn:          instruction.Accounts[0],
 		TokenOut:         instruction.Accounts[1],
 		Pool:             instruction.Accounts[2],
-		Trader:           instruction.Accounts[3],
+		Trader:           instruction.Accounts[0], // Use first account as fallback for signer
 		AmountIn:         amountIn,
 		AmountOut:        amountOut,
 		TradeType:        "swap",
@@ -1108,7 +1132,7 @@ func parseGeyserBuyInstruction(instruction GeyserInstruction, index int, result 
 		TokenIn:          instruction.Accounts[0], // Base currency (SOL/USDC)
 		TokenOut:         instruction.Accounts[1], // Token being bought
 		Pool:             instruction.Accounts[2],
-		Trader:           instruction.Accounts[3],
+		Trader:           instruction.Accounts[0], // Use first account as fallback for signer
 		AmountIn:         amountIn,
 		AmountOut:        amountOut,
 		TradeType:        "buy",
@@ -1157,7 +1181,7 @@ func parseGeyserSellInstruction(instruction GeyserInstruction, index int, result
 		TokenIn:          instruction.Accounts[0], // Token being sold
 		TokenOut:         instruction.Accounts[1], // Base currency (SOL/USDC)
 		Pool:             instruction.Accounts[2],
-		Trader:           instruction.Accounts[3],
+		Trader:           instruction.Accounts[0], // Use first account as fallback for signer
 		AmountIn:         amountIn,
 		AmountOut:        amountOut,
 		TradeType:        "sell",
@@ -1290,22 +1314,81 @@ func parseAsSwapInstruction(instruction solana.CompiledInstruction, message *sol
 
 	// Extract accounts (best guess based on common Raydium patterns)
 	var tokenIn, tokenOut, pool, trader solana.PublicKey
-	if len(instruction.Accounts) >= 4 && len(message.AccountKeys) > int(instruction.Accounts[3]) {
-		if int(instruction.Accounts[0]) < len(message.AccountKeys) &&
-			int(instruction.Accounts[1]) < len(message.AccountKeys) &&
-			int(instruction.Accounts[2]) < len(message.AccountKeys) &&
-			int(instruction.Accounts[3]) < len(message.AccountKeys) {
-			tokenIn = message.AccountKeys[instruction.Accounts[0]]
-			tokenOut = message.AccountKeys[instruction.Accounts[1]]
-			pool = message.AccountKeys[instruction.Accounts[2]]
-			trader = message.AccountKeys[instruction.Accounts[3]]
+
+	// The trader is the transaction signer (first account)
+	if len(message.AccountKeys) > 0 {
+		trader = message.AccountKeys[0]
+	}
+
+	// Debug: Log account structure for analysis
+	log.Printf("DEBUG: Total accounts in message: %d", len(message.AccountKeys))
+	log.Printf("DEBUG: Instruction accounts: %d", len(instruction.Accounts))
+	for i := 0; i < len(instruction.Accounts) && i < 10; i++ {
+		accountIndex := int(instruction.Accounts[i])
+		if accountIndex < len(message.AccountKeys) {
+			account := message.AccountKeys[accountIndex]
+			log.Printf("DEBUG: Account[%d] = %s", i, account.String())
 		} else {
-			log.Printf("Warning: Invalid account indices in instruction, using fallback accounts")
-			if len(message.AccountKeys) >= 4 {
-				tokenIn = message.AccountKeys[0]
-				tokenOut = message.AccountKeys[1]
-				pool = message.AccountKeys[2]
-				trader = message.AccountKeys[3]
+			log.Printf("DEBUG: Account index %d out of bounds (max %d)", accountIndex, len(message.AccountKeys)-1)
+		}
+	}
+
+	solMint := solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")
+
+	// Set default values
+	tokenIn = solMint
+	tokenOut = solana.PublicKey{}
+	pool = solana.PublicKey{}
+
+	// Look for the token mint and pool in the accounts (with bounds checking)
+	for i := 0; i < len(instruction.Accounts) && i < 10; i++ {
+		accountIndex := int(instruction.Accounts[i])
+		if accountIndex < len(message.AccountKeys) {
+			account := message.AccountKeys[accountIndex]
+
+			// Skip the trader account
+			if account.Equals(trader) {
+				continue
+			}
+
+			// Skip SOL mint if we already have it as tokenIn
+			if account.Equals(solMint) {
+				continue
+			}
+
+			// Skip system program and token program accounts
+			if account.Equals(SystemProgramID) || account.Equals(TokenProgramID) {
+				continue
+			}
+
+			// The first non-system account that's not the trader should be the new token
+			if tokenOut.IsZero() {
+				tokenOut = account
+				log.Printf("DEBUG: Found tokenOut: %s", tokenOut.String())
+			} else if pool.IsZero() {
+				pool = account
+				log.Printf("DEBUG: Found pool: %s", pool.String())
+			}
+		}
+	}
+
+	if tokenOut.IsZero() {
+		for i := 1; i < len(message.AccountKeys) && i < 10; i++ {
+			account := message.AccountKeys[i]
+
+			// Skip known system accounts
+			if account.Equals(SystemProgramID) || account.Equals(TokenProgramID) ||
+				account.Equals(solMint) || account.Equals(trader) {
+				continue
+			}
+
+			// This should be the token being bought
+			if tokenOut.IsZero() {
+				tokenOut = account
+				log.Printf("DEBUG: Found tokenOut from message accounts: %s", tokenOut.String())
+			} else if pool.IsZero() {
+				pool = account
+				log.Printf("DEBUG: Found pool from message accounts: %s", pool.String())
 			}
 		}
 	}
@@ -1317,7 +1400,7 @@ func parseAsSwapInstruction(instruction solana.CompiledInstruction, message *sol
 		Pool:             pool,
 		Trader:           trader,
 		AmountIn:         amountIn,
-		AmountOut:        0, // Would be extracted from transaction logs/metadata
+		AmountOut:        0,
 		TradeType:        "swap",
 	}
 
