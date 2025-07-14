@@ -2,7 +2,10 @@ module raydium-parser
 
 go 1.24.4
 
-require github.com/gagliardetto/solana-go v1.12.0
+require (
+	github.com/gagliardetto/binary v0.8.0
+	github.com/gagliardetto/solana-go v1.12.0
+)
 
 require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
@@ -10,7 +13,6 @@ require (
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/gagliardetto/binary v0.8.0 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
