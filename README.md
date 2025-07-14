@@ -1,17 +1,26 @@
-# Raydium Transaction Parser
+# Raydium Transaction Parser and Instruction Builder
 
-A Go project for parsing Solana transactions with a focus on Raydium DEX operations.
+A comprehensive Go library for parsing Raydium transactions from the Solana blockchain and building Raydium instructions for submission.
 
 ## Features
 
-- Parse Solana transactions using the `solana-go` library
-- Detect and extract Raydium-specific operations:
-  - Token/Pool creation
-  - Swaps (buy/sell)
-  - Liquidity operations
-  - Migrations
-- Support for both top-level and inner instructions
-- Structured data extraction for trading analysis
+### Transaction Parsing
+- **Dual Format Support**: Handles both Geyser and standard Solana RPC transaction formats
+- **Multi-Program Support**: Recognizes all major Raydium program IDs including V4, V5, Launchpad, and CP-Swap
+- **Instruction Detection**: Identifies and parses swap, buy, sell, create, and migrate operations
+- **Generic Parsing**: Handles unknown instruction discriminators with fallback parsing logic
+- **Real-time Analysis**: Fetches and parses live transactions from Solana mainnet
+
+### Instruction Building
+- **Builder Pattern**: Fluent API with method chaining for easy instruction construction
+- **Type Safety**: Strongly typed instruction builders with validation
+- **Multiple Instruction Types**:
+  - `SwapInstruction`: For token swaps through Raydium AMM
+  - `BuyInstruction`: For token purchases in Raydium Launchpad
+  - `SellInstruction`: For token sales in Raydium Launchpad
+  - `CreateTokenInstruction`: For token creation operations
+  - `MigrateInstruction`: For pool migration operations
+- **Solana Integration**: Built-in serialization to valid Solana instructions
 
 ## Prerequisites
 
@@ -29,100 +38,229 @@ A Go project for parsing Solana transactions with a focus on Raydium DEX operati
 
 ## Usage
 
-### Running the Parser
+### Command Line Interface
 
 ```bash
+# Run instruction builder tests
+go run . test
+
+# Parse a real transaction from Solana mainnet
 go run .
+
+# Show help
+go run . help
+
+# Run in offline mode (same as test)
+go run . offline
 ```
 
-This will parse a sample transaction and display the results.
+### Building Instructions
 
-### Custom Transaction Parsing
+```go
+package main
 
-You can parse your own transactions by:
+import (
+    "fmt"
+    "github.com/gagliardetto/solana-go"
+)
 
-1. Creating a file named `sample_transaction.txt` with a base64-encoded transaction
-2. Or modifying the `sampleTransactionBase64` constant in `main.go`
+func main() {
+    // Create a swap instruction
+    swapInst := NewSwapInstruction().
+        SetUserSourceToken(solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")).
+        SetUserDestToken(solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")).
+        SetUserOwner(solana.MustPublicKeyFromBase58("HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")).
+        SetAmountIn(1000000).
+        SetMinimumAmountOut(950000)
 
-### Example Output
+    instruction, err := swapInst.Build()
+    if err != nil {
+        panic(err)
+    }
 
+    fmt.Printf("Swap instruction created with %d accounts\n", len(instruction.Accounts()))
+    
+    // Create a buy instruction
+    buyInst := NewBuyInstruction().
+        SetUserAuthority(solana.MustPublicKeyFromBase58("HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")).
+        SetTokenMint(solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")).
+        SetAmount(1000000).
+        SetMaxSolCost(500000)
+
+    buyInstruction, err := buyInst.Build()
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Printf("Buy instruction created with %d accounts\n", len(buyInstruction.Accounts()))
+}
 ```
-Raydium Transaction Parser
-==========================
-Parsing sample transaction...
-Transaction successfully parsed!
 
-Signature: [signature]
-Slot: 123456789
-Number of Creates: 0
-Number of Trades: 0
-Number of Trade Buys: 0
-Number of Trade Sells: 0
-Number of Migrations: 0
-Number of Swap Buys: 0
-Number of Swap Sells: 0
+### Parsing Transactions
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/gagliardetto/solana-go"
+)
+
+func main() {
+    // Parse a transaction from base64 encoded data
+    txData := "your_base64_encoded_transaction_data"
+    slot := uint64(123456789)
+
+    transaction, err := ParseTransaction(txData, slot)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Printf("Transaction signature: %s\n", transaction.Signature)
+    fmt.Printf("Number of trades: %d\n", len(transaction.Trade))
+    fmt.Printf("Number of creates: %d\n", len(transaction.Create))
+    fmt.Printf("Number of migrations: %d\n", len(transaction.Migrate))
+}
 ```
 
-## Project Structure
+## Available Instruction Builders
 
-- `main.go` - Entry point and sample usage
-- `parser.go` - Core parsing logic and instruction handlers
-- `types.go` - Data structures for parsed transaction data
-- `go.mod` - Go module definition
-- `README.md` - This file
+### SwapInstruction
+```go
+swapInst := NewSwapInstruction().
+    SetUserSourceToken(sourceTokenAccount).
+    SetUserDestToken(destTokenAccount).
+    SetUserOwner(userWallet).
+    SetAmmID(ammPool).
+    SetAmountIn(1000000).
+    SetMinimumAmountOut(950000)
+```
 
-## Data Structures
+### BuyInstruction
+```go
+buyInst := NewBuyInstruction().
+    SetUserAuthority(userWallet).
+    SetTokenMint(tokenMint).
+    SetAmount(1000000).
+    SetMaxSolCost(500000)
+```
 
-### Transaction
-The main structure containing all parsed transaction data:
-- `Signature` - Transaction signature
-- `Slot` - Block slot number
-- `Create` - Token/pool creation operations
-- `Trade` - General trade information
-- `TradeBuys/TradeSells` - Buy/sell operation indices
-- `Migrate` - Migration operations
-- `SwapBuys/SwapSells` - Detailed swap information
+### SellInstruction
+```go
+sellInst := NewSellInstruction().
+    SetUserAuthority(userWallet).
+    SetTokenMint(tokenMint).
+    SetAmount(1000000).
+    SetMinSolReceived(450000)
+```
 
-### Supporting Types
-- `CreateInfo` - Token/pool creation details
-- `TradeInfo` - Trade operation details
-- `Migration` - Migration operation details
-- `SwapBuy/SwapSell` - Detailed swap operation data
+### CreateTokenInstruction
+```go
+createInst := NewCreateTokenInstruction().
+    SetPayer(payerWallet).
+    SetMint(newTokenMint).
+    SetDecimals(9).
+    SetName("My Token").
+    SetSymbol("MTK").
+    SetInitialSupply(1000000000)
+```
 
-## Known Raydium Program IDs
+### MigrateInstruction
+```go
+migrateInst := NewMigrateInstruction().
+    SetUserAuthority(userWallet).
+    SetFromPool(oldPool).
+    SetToPool(newPool).
+    SetAmount(1000000)
+```
 
-The parser recognizes the following Raydium program IDs:
-- V4: `675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8`
-- V5: `5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h`
-- Staking: `EhhTKczWMGQt46ynNeRX1WfeagwwJd7ufHvCDjRxjo5Q`
-- Liquidity: `27haf8L6oxUeXrHrgEgsexjSY5hbVUWEmvv9Nyxg8vQv`
+## Testing
 
-## Future Enhancements
+### Run All Tests
+```bash
+go test -v
+```
 
-1. **Inner Instruction Parsing**: Currently only parses top-level instructions
-2. **Real Transaction Data**: Integration with actual Raydium transactions
-3. **Token Metadata**: Fetch token symbols and metadata
-4. **Price Calculation**: Calculate USD values for trades
-5. **Geyser Integration**: Connect to Solana Geyser plugin for real-time data
-6. **Database Storage**: Store parsed data in a database
-7. **API Endpoints**: REST API for querying parsed transactions
+### Run Specific Tests
+```bash
+go test -v -run TestSwapInstructionBuilder
+go test -v -run TestBuyInstructionBuilder
+go test -v -run TestSellInstructionBuilder
+```
 
-## Development Notes
+### Transaction Submission Tests
+To test actual transaction submission, set environment variables:
+```bash
+export SOLANA_WALLET_PATH="/path/to/your/wallet.json"
+export SOLANA_RPC_ENDPOINT="https://api.mainnet-beta.solana.com"
+go test -v -run TestTransactionSubmission
+```
 
-- The current implementation uses placeholder instruction discriminators
-- Actual parsing logic would need to be adapted based on the real Raydium IDL
-- Some fields are currently hardcoded and would need dynamic extraction
-- Error handling could be enhanced for production use
+## Supported Raydium Program IDs
+
+- **Raydium V4**: `675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8`
+- **Raydium V5**: `5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h`
+- **Raydium Staking**: `EhhTKczWMGQt46ynNeRX1WfeagwwJd7ufHvCDjRxjo5Q`
+- **Raydium Liquidity**: `27haf8L6oxUeXrHrgEgsexjSY5hbVUWEmvv9Nyxg8vQv`
+- **Raydium Launchpad V1**: `6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P`
+- **Raydium CP-Swap**: `CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C`
+
+## Instruction Discriminators
+
+| Operation | Discriminator | Description |
+|-----------|---------------|-------------|
+| Swap | 1 | Token swap through AMM |
+| Buy | 6 | Token purchase in Launchpad |
+| Sell | 7 | Token sale in Launchpad |
+| Create Pool | 9 | Token/pool creation |
+## Architecture
+
+### Parser Module (`parser.go`)
+- Handles both Geyser and standard RPC transaction formats
+- Detects and parses various Raydium program IDs
+- Implements generic parsing for unknown instruction discriminators
+- Provides debug logging for instruction analysis
+
+### Instruction Builders (`instructions.go`)
+- Implements builder pattern for all major Raydium operations
+- Provides fluent API with method chaining
+- Handles serialization to valid Solana instructions
+- Maintains separation between parsing and building functionality
+
+### Type Definitions (`types.go`)
+- Defines core transaction and instruction structures
+- Provides type safety for all operations
+- Supports extensibility for new instruction types
+
+### Utilities (`utils.go`)
+- Common helper functions for transaction analysis
+- Validation and formatting utilities
+- Error handling and logging support
+
+## Error Handling
+
+The library provides comprehensive error handling:
+- Invalid transaction format detection
+- Missing required fields validation
+- Network connectivity issues
+- RPC endpoint failures
+- Invalid instruction data
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
+3. Add tests for new functionality
+4. Ensure all tests pass
 5. Submit a pull request
 
 ## License
 
-This project is provided as-is for educational and development purposes.
-# raydium-transaction-parser
+This project is licensed under the MIT License.
+
+## Support
+
+For issues and questions:
+- Check the test files for usage examples
+- Review the parser debug logs for transaction analysis
+- Consult the Solana and Raydium documentation for protocol details
