@@ -1,0 +1,12 @@
+# Test transaction data for Raydium Launchpad parser
+# This file contains sample transaction signatures that can be used to test the parser
+
+# Create/Initialize transaction
+5wefCTqi9ynrh8pvVHFzpgHCLFFzoBwGoTgWSd6iq2Qw4Y51U4cEc2xHYtsdVSFZmRXUp5DNMSkhzb1CaXomLpJM
+
+# Buy transaction example
+2N9VyxzFmHibuWy5HmJH52R6Hy6NZPw5iCdFc9X1JT4JBPCa4VZmxv3RhSvP9UfDdCdgDYvoeaN62v29toJNAWtD
+
+# Additional test transactions for debugging
+# These should be real transaction signatures from Solscan
+# Replace with actual valid signatures when available
