@@ -428,8 +428,11 @@ func parseInstruction(instruction solana.CompiledInstruction, message *solana.Me
 
 	programID := message.AccountKeys[instruction.ProgramIDIndex]
 
-	// Debug: Log all program IDs encountered
-	log.Printf("Instruction %d: Program ID = %s", index, programID.String())
+	// Create comprehensive debug info structure
+	debugInfo := createInstructionDebugInfo(instruction, message, index, programID)
+
+	// Print detailed debug info with all 18 account fields
+	printInstructionDebugInfo(debugInfo)
 
 	// Check if this is a Raydium instruction
 	switch programID {
@@ -726,9 +729,17 @@ func parseBuyInstructionStandard(instruction solana.CompiledInstruction, message
 	// Extract buy parameters from instruction data
 	var amountIn, maxAmountIn uint64 = 0, 0
 
-	if len(instruction.Data) >= 17 {
-		amountIn = binary.LittleEndian.Uint64(instruction.Data[1:9])
-		maxAmountIn = binary.LittleEndian.Uint64(instruction.Data[9:17])
+	// For Launchpad transactions, we need to skip the discriminator
+	dataStart := 1
+	if len(instruction.Data) >= 8 {
+		dataStart = 8 // Skip 8-byte discriminator for complex instructions
+	}
+
+	if len(instruction.Data) >= dataStart+8 {
+		amountIn = binary.LittleEndian.Uint64(instruction.Data[dataStart : dataStart+8])
+	}
+	if len(instruction.Data) >= dataStart+16 {
+		maxAmountIn = binary.LittleEndian.Uint64(instruction.Data[dataStart+8 : dataStart+16])
 	}
 
 	// For launchpad buy transactions, TokenIn is typically SOL
@@ -832,22 +843,8 @@ func parseBuyInstructionStandard(instruction solana.CompiledInstruction, message
 	result.Trade = append(result.Trade, tradeInfo)
 	result.TradeBuys = append(result.TradeBuys, index)
 
-	slippage := 0.0
-	if maxAmountIn > 0 && amountIn > 0 {
-		slippage = calculateSlippage(amountIn, maxAmountIn)
-	}
-
-	swapBuy := SwapBuy{
-		TokenIn:      tradeInfo.TokenIn,
-		TokenOut:     tradeInfo.TokenOut,
-		AmountIn:     amountIn,
-		AmountOut:    tradeInfo.AmountOut,
-		Pool:         tradeInfo.Pool,
-		Buyer:        tradeInfo.Trader,
-		MinAmountOut: 0, // Buy operations specify max input, not min output
-		Slippage:     slippage,
-	}
-	result.SwapBuys = append(result.SwapBuys, swapBuy)
+	// Note: For Launchpad transactions, we only create Trade entries, not SwapBuy entries
+	// SwapBuy entries are only for traditional DEX swaps, not Launchpad buy operations
 
 	return nil
 }
@@ -1065,6 +1062,12 @@ func getKnownTokenInfo(tokenMint solana.PublicKey) (TokenInfo, bool) {
 			Mint:     solana.MustPublicKeyFromBase58("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
 			Symbol:   "USDT",
 			Name:     "Tether USD",
+			Decimals: 6,
+		},
+		"8pf71rxkus6HVhNa9ERdJ571wfPa1a8QKKMsxGkDbonk": {
+			Mint:     solana.MustPublicKeyFromBase58("8pf71rxkus6HVhNa9ERdJ571wfPa1a8QKKMsxGkDbonk"),
+			Symbol:   "JAMAL",
+			Name:     "Jamal Token",
 			Decimals: 6,
 		},
 	}

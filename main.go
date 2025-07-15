@@ -29,6 +29,10 @@ func main() {
 			fmt.Println("Test mode - running instruction builder tests...")
 			testInstructionBuilders()
 			return
+		case "debug":
+			fmt.Println("Debug mode - testing comprehensive debug output...")
+			testDebugOutput()
+			return
 		case "help", "-h", "--help":
 			printUsage()
 			return
@@ -679,4 +683,50 @@ func testInstructionBuilders() {
 	fmt.Println("- Set environment variables SOLANA_WALLET_PATH and SOLANA_RPC_ENDPOINT to test transaction submission")
 	fmt.Println("- Use 'go test -v' to run the full test suite")
 	fmt.Println("- Run without arguments to test live transaction parsing")
+}
+
+// testDebugOutput tests the comprehensive debug output functionality
+func testDebugOutput() {
+	fmt.Println("Testing comprehensive debug output...")
+
+	// Create mock instruction
+	instruction := solana.CompiledInstruction{
+		ProgramIDIndex: 0,
+		Accounts:       []uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17},
+		Data:           []byte{0xaf, 0xaf, 0x6d, 0x1f, 0x0d, 0x98, 0x9b, 0xed, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+	}
+
+	// Create mock message with 18 accounts
+	message := &solana.Message{
+		AccountKeys: []solana.PublicKey{
+			solana.MustPublicKeyFromBase58("DcyrgE2gusF35moZDMVnjED7jfXBuQeJgjG2oEgocYWd"), // Creator/Signer
+			solana.MustPublicKeyFromBase58("8pf71rxkus6HVhNa9ERdJ571wfPa1a8QKKMsxGkDbonk"), // Token mint
+			solana.MustPublicKeyFromBase58("7ADJ8pYiWJA4gu2sC6VtXJ1EhbRzH4kavktmsHMfa91P"), // Pool
+			solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112"),  // SOL
+			solana.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),  // Token program
+			solana.MustPublicKeyFromBase58("11111111111111111111111111111111"),             // System program
+			solana.MustPublicKeyFromBase58("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), // ATA program
+			solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj"),  // Launchpad program
+			solana.MustPublicKeyFromBase58("6s1xP3hpbAfFoNtUNF8mfHsjr2Bd97JxFJRWLbL6aHuX"), // User account 1
+			solana.MustPublicKeyFromBase58("WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh"),  // User account 2
+			solana.MustPublicKeyFromBase58("7q1ZvFbhCgRVyNBZQKCxGb7VHG3TdWDDJrFxFvELMkwS"), // User account 3
+			solana.MustPublicKeyFromBase58("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"), // User account 4
+			solana.MustPublicKeyFromBase58("8UviNr47S8eL32NjTcM8rEjXcCqfGJWTkNBJmL9PwqLH"), // User account 5
+			solana.MustPublicKeyFromBase58("6VtykzqrYmfHJ4xbKBQcwNGVGvP6MWVpKKgYxNsqRKzp"), // User account 6
+			solana.MustPublicKeyFromBase58("5SALHVLHLCQQmFYTdgJEBaBhBfKcVx5qLYGrBVWCqWcC"), // User account 7
+			solana.MustPublicKeyFromBase58("4oYJfEFPjjWEUAQqkUWRdQhLWKqXgNx6g7xHmKZvdTkt"), // User account 8
+			solana.MustPublicKeyFromBase58("3KSEjRqHyXjdWqbTz1X8MQbqQxFVpJjUPEGRBAfWfKJW"), // User account 9
+			solana.MustPublicKeyFromBase58("2JYPCXzTYhXvUgfwJyMvVoHGiGZVGaQVLdL3oKmKjPkT"), // User account 10
+		},
+	}
+
+	// Test the debug function
+	fmt.Println("Creating debug info...")
+	programID := message.AccountKeys[7] // Launchpad program
+	debugInfo := createInstructionDebugInfo(instruction, message, 0, programID)
+
+	fmt.Println("Printing debug info...")
+	printInstructionDebugInfo(debugInfo)
+
+	fmt.Println("Debug output test completed!")
 }
